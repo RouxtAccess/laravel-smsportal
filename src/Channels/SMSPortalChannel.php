@@ -61,16 +61,19 @@ class SMSPortalChannel
         ]);
 
         if( isset( $response['eventId'] ) ){
-            if($notification->savedNotification && $notification->savedNotification instanceof DatabaseNotification)
-            {
+            if(isset($notification->savedNotification) && $notification->savedNotification instanceof DatabaseNotification) {
                 $notification->savedNotification->update(['data->eventId' =>  $response['eventId'], 'sent_at' => Carbon::now()]);
-            }
-            else{
-                Cache::tags('smsportal')->put($response['eventId'], [
+            } else {
+                $cacheData = [
                     'notifiable_model' => get_class($notifiable),
                     'notifiable_model_key' => $notifiable->getKey(),
                     'notification_model' => get_class($notification),
-                ]);
+                ];
+                if (Cache::supportsTags()){
+                    Cache::tags('smsportal')->put($response['eventId'], $cacheData); 
+                } else {
+                    Cache::put('smsportal_' . $response['eventId'], $cacheData); 
+                }
             }
         }
 
